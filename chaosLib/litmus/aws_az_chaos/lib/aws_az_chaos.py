@@ -20,7 +20,11 @@ def PrepareAWSAZExperiment(experimentsDetails , resultDetails, eventsDetails, ch
 		if err != None:
 			return err
 	elif experimentsDetails.Sequence.lower() == "parallel":
-		err = injectChaosInParallelMode(experimentsDetails, chaosDetails, eventsDetails, resultDetails, clients, statusAws)
+		if experimentsDetails.LoadBalancerVersion == "elb":
+			err = injectChaosInParallelMode(experimentsDetails, chaosDetails, eventsDetails, resultDetails, clients, statusAws)
+		elif experimentsDetails.LoadBalancerVersion == "elbv2":
+			logging.info("[Sequence]: aws az chaos is not available in parallel mode with elbv2 as it requires at least one subnet per LoadBalancer")
+			return ValueError("aws az chaos is not available in parallel mode with elbv2 as it requires at least one subnet per LoadBalancer")
 		if err != None:
 			return err
 	else:
@@ -39,7 +43,6 @@ def injectChaosInSerialMode(experimentsDetails , chaosDetails , eventsDetails , 
 	#ChaosStartTimeStamp contains the start timestamp, when the chaos injection begin
 	ChaosStartTimeStamp = datetime.now()
 	duration = (datetime.now() - ChaosStartTimeStamp).seconds
-	
 	while duration < experimentsDetails.ChaosDuration:
      
 		# Get the target available zones for the chaos execution
@@ -54,17 +57,27 @@ def injectChaosInSerialMode(experimentsDetails , chaosDetails , eventsDetails , 
 		
 		# Detaching the target zones from loa balancer 
 		for azone in targetZones:
-
 			logging.info("[Info]: Detaching the following zone, Zone Name %s", azone)
 			targetSubnet, err = statusAws.getTargetSubnet(experimentsDetails, azone)
-			subnetList = list(targetSubnet.split(" "))
-			if err != None:
-				return err
-			logging.info("[Info]: Detaching the following subnet, %s", subnetList)
-			err = statusAws.detachSubnet(experimentsDetails, subnetList)
 			if err != None:
 				return err
 
+			if targetSubnet is None:
+				logging.error("[Error]: No subnet found for the zone %s", azone)
+				return ValueError("No subnet found for the zone %s" % azone)
+   
+			if experimentsDetails.LoadBalancerVersion == "elb":
+				subnetList = list(targetSubnet.split(" "))
+				logging.info("[Info]: Detaching the following subnet, %s", subnetList)
+				err = statusAws.detachSubnet(experimentsDetails, subnetList)
+				if err != None:
+					return err
+			elif experimentsDetails.LoadBalancerVersion == "elbv2":
+				logging.info("[Info]: Detaching the following subnet, %s", targetSubnet)
+				err = statusAws.detachSubnetv2(experimentsDetails, targetSubnet)
+				if err != None:
+					return err
+			
 			if chaosDetails.Randomness:
 				err = common.RandomInterval(experimentsDetails.ChaosInterval)
 				if err != None:
@@ -76,11 +89,21 @@ def injectChaosInSerialMode(experimentsDetails , chaosDetails , eventsDetails , 
 					waitTime = maths.atoi(experimentsDetails.ChaosInterval)
 					common.WaitForDuration(waitTime)
 
-			# Attaching the target available zone after the chaos injection
-			logging.info("[Status]: Attach the available zone back to load balancer")
-			err = statusAws.attachAZtoLB(experimentsDetails, azone)
-			if err != None:
-				return err
+			if experimentsDetails.LoadBalancerVersion == "elb":
+				
+				# Attaching the target available zone after the chaos injection
+				logging.info("[Status]: Attach the available zone back to load balancer")
+				err = statusAws.attachSubnet(experimentsDetails, subnetList)
+				if err != None:
+					return err
+ 
+			elif experimentsDetails.LoadBalancerVersion == "elbv2":
+       
+				# Attaching again the target availability zone subnet after chaos injection
+				logging.info("[Status]: Attach the available zone back to load balancer")
+				err = statusAws.attachSubnetv2(experimentsDetails, targetSubnet)
+				if err != None:
+					return err
 			
    			#Verify the status of available zone after the chaos injection
 			logging.info("[Status]: Checking AWS load balancer's AZ status")		

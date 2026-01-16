@@ -1,7 +1,9 @@
 import os, boto3
 from kubernetes import client, config, dynamic
 from kubernetes.client import api_client
-
+import pkg.aws_az.types.types as experimentDetails
+from botocore.config import Config
+import pkg.aws_az.environment.environment as experimentEnv
 
 # Client Class is maintaining clients for k8s
 class K8sClient(object):
@@ -12,9 +14,10 @@ class K8sClient(object):
 
 # AWSClient is maintaining clients for aws
 class AWSClient(object):
-    def __init__(self):
-        self.clientElb =  boto3.client('elb')
-        self.clientElbv2 =  boto3.client('elbv2')
+    def __init__(self, experimentsDetails):
+
+        self.clientElb =  boto3.client('elb', region_name=experimentsDetails.AWSRegion)
+        self.clientElbv2 =  boto3.client('elbv2', region_name=experimentsDetails.AWSRegion)
 
 # Config maintain configuration for in and out cluster
 class Configuration(object):

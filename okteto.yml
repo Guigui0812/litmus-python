@@ -1,12 +1,16 @@
-name: litmus-experiment
-autocreate: true
-image: okteto/python:3
-command: bash
-volumes:
-- /root/.cache/pip
-sync:
-- .:/usr/src/app
-forward:
-- 8080:8080
-reverse:
-- 9000:9000
+dev:
+  litmus-experiment:
+    image: okteto/python:3
+    command: bash -c "apt-get update && apt-get install -y build-essential python3-dev && pip install cython && bash"
+    volumes:
+      - /root/.cache/pip
+    sync:
+      - .:/usr/src/app
+    reverse:
+      - 9000:9000
+    persistentVolume:
+      enabled: true
+      storageClass: gp3
+    serviceAccount: "<your-litmus-sa-name>"
+    environment:
+      - <your-env-variables>

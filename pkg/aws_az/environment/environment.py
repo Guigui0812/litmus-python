@@ -9,7 +9,7 @@ def GetENV(experimentDetails):
 	experimentDetails.ChaosNamespace = os.getenv("CHAOS_NAMESPACE", "")
 	experimentDetails.EngineName = os.getenv("CHAOSENGINE", "")
 	experimentDetails.ChaosDuration = maths.atoi(os.getenv("TOTAL_CHAOS_DURATION", "60"))
-	experimentDetails.ChaosInterval = os.getenv("CHAOS_INTERVAL", "30")
+	experimentDetails.ChaosInterval = os.getenv("CHAOS_INTERVAL", "60")
 	experimentDetails.RampTime = maths.atoi(os.getenv("RAMP_TIME", ""))
 	experimentDetails.ChaosLib = os.getenv("LIB", "litmus")
 	experimentDetails.ChaosUID = os.getenv("CHAOS_UID", "")
@@ -17,11 +17,12 @@ def GetENV(experimentDetails):
 	experimentDetails.ChaosPodName = os.getenv("POD_NAME", "")
 	experimentDetails.Delay = maths.atoi(os.getenv("STATUS_CHECK_DELAY", "2"))
 	experimentDetails.Timeout = maths.atoi(os.getenv("STATUS_CHECK_TIMEOUT", "180"))
-	experimentDetails.Sequence = os.getenv("SEQUENCE", "parallel")
-	experimentDetails.AWSRegion = os.getenv("AWS_DEFAULT_REGION", "")
+	experimentDetails.Sequence = os.getenv("SEQUENCE", "serial")
+	experimentDetails.AWSRegion = os.getenv("AWS_REGION", "")
 	experimentDetails.LoadBalancerName = os.getenv("LOAD_BALANCER_NAME", "")
 	experimentDetails.LoadBalancerZones = os.getenv("LOAD_BALANCER_ZONES", "")
 	experimentDetails.LoadBalancerNameARN = os.getenv("LOAD_BALANCERNAME_ARN", "na")
+	experimentDetails.LoadBalancerVersion = os.getenv("LOAD_BALANCER_VERSION", "elb")
 
 #InitialiseChaosVariables initialise all the global variables
 def InitialiseChaosVariables(chaosDetails, experimentDetails):

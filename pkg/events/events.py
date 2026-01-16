@@ -6,7 +6,7 @@ import pkg.utils.k8serror.k8serror as k8serror
 #CreateEvents create the events in the desired resource
 def CreateEvents(eventsDetails , chaosDetails, kind, eventName, clients):
 	
-	event = client.V1Event(
+	event = client.CoreV1Event(
 			first_timestamp 	= datetime.now(pytz.utc),
 			last_timestamp 		=  datetime.now(pytz.utc),
 			event_time 		= datetime.now(pytz.utc),
@@ -52,7 +52,7 @@ def GenerateEvents(eventsDetails, chaosDetails, kind, clients):
 			return err
 	elif kind == "ChaosEngine":
 		eventName = eventsDetails.Reason + chaosDetails.ExperimentName + str(chaosDetails.ChaosUID)
-		event = client.V1Event
+		event = client.CoreV1Event
 		try:
 			event = clients.clientCoreV1.read_namespaced_event(name = eventName,namespace = chaosDetails.ChaosNamespace)
 		except Exception as exp:
